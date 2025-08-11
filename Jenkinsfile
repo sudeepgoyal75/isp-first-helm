@@ -4,18 +4,28 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo 'Building...'
+                echo 'Building golden image'
             }
         }
-        stage('Test') {
-            steps {
-                echo 'Testing...'
+        stage('Tests in Parallel') {
+            parallel {
+                stage('tb1') {
+                    steps {
+                        echo 'Running tb1...'
+                    }
+                }
+                stage('tb2') {
+                    steps {
+                        echo 'Running tb2...'
+                    }
+                }
             }
         }
-        stage('Deploy') {
+        stage('docs') {
             steps {
                 echo 'Deploying..ss'
             }
         }
     }
 }
+
