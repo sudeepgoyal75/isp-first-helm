@@ -1,29 +1,28 @@
 pipeline {
     agent any
-    environment {
-        NEXT_STAGE = "" // will be set in S1
-    }
     stages {
         stage('S1 - Decide Next Stage') {
             steps {
                 script {
-                    // Your logic here — could be based on parameters, files, API calls, etc.
-                    def randomPick = new Random().nextInt(2) // 0 or 1
-
-                    if (randomPick == 0) {
-                        env.NEXT_STAGE = "S2"
-                    } else {
-                        env.NEXT_STAGE = "S3"
-                    }
-
-                    echo "S1 completed. Next stage will be: ${env.NEXT_STAGE}"
+                    // Decide next stage
+                    def nextStage = (new Random().nextInt(2) == 0) ? "S2" : "S3"
+                    // Save to currentBuild description to see in UI
+                    currentBuild.description = "Next stage: ${nextStage}"
+                    // Save in Jenkins environment for use in next stages
+                    env.NEXT_STAGE = nextStage
+                    // Also save in script binding for 'when' condition
+                    binding.setVariable('nextStage', nextStage)
+                    echo "S1 completed. Next stage will be: ${nextStage}"
                 }
             }
         }
 
         stage('S2 - Run if chosen') {
             when {
-                expression { env.NEXT_STAGE == "S2" }
+                expression { 
+                    // use groovy var 'nextStage' instead of env
+                    return binding.hasVariable('nextStage') && binding.getVariable('nextStage') == "S2"
+                }
             }
             steps {
                 echo "Running Stage S2"
@@ -32,7 +31,9 @@ pipeline {
 
         stage('S3 - Run if chosen') {
             when {
-                expression { env.NEXT_STAGE == "S3" }
+                expression { 
+                    return binding.hasVariable('nextStage') && binding.getVariable('nextStage') == "S3"
+                }
             }
             steps {
                 echo "Running Stage S3"
