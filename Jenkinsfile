@@ -1,40 +1,41 @@
 pipeline {
     agent any
-
+    environment {
+        NEXT_STAGE = "" // will be set in S1
+    }
     stages {
-        stage('Build') {
+        stage('S1 - Decide Next Stage') {
             steps {
-                echo 'Building golden image'
-                sh 'mkdir -p build_output && echo "Hello from build" > build_output/result.txt'
-                
-                // Save files for later stages
-                stash name: 'build-files', includes: 'build_output/**'
-            }
-        }
-        stage('Tests in Parallel') {
-            parallel {
-                stage('tb1') {
-                    steps {
-                        // Retrieve build files
-                        unstash 'build-files'
-                        sh 'cat build_output/result.txt'
-                        echo 'Running tb1...'
+                script {
+                    // Your logic here — could be based on parameters, files, API calls, etc.
+                    def randomPick = new Random().nextInt(2) // 0 or 1
+
+                    if (randomPick == 0) {
+                        env.NEXT_STAGE = "S2"
+                    } else {
+                        env.NEXT_STAGE = "S3"
                     }
-                }
-                stage('tb2') {
-                    steps {
-                        unstash 'build-files'
-                        sh 'cat build_output/result.txt'
-                        echo 'Running tb2...'
-                    }
+
+                    echo "S1 completed. Next stage will be: ${env.NEXT_STAGE}"
                 }
             }
         }
-        stage('docs') {
+
+        stage('S2 - Run if chosen') {
+            when {
+                expression { env.NEXT_STAGE == "S2" }
+            }
             steps {
-                unstash 'build-files'
-                sh 'ls -l build_output'
-                echo 'Deploying..ss'
+                echo "Running Stage S2"
+            }
+        }
+
+        stage('S3 - Run if chosen') {
+            when {
+                expression { env.NEXT_STAGE == "S3" }
+            }
+            steps {
+                echo "Running Stage S3"
             }
         }
     }
